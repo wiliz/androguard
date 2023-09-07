@@ -10,6 +10,8 @@ import networkx as nx
 from enum import IntEnum
 
 log = logging.getLogger("androguard.analysis")
+### custom by zwl: default DEBUG is too many
+log.setLevel(logging.ERROR)
 
 BasicOPCODES = set()
 for i in dvm.BRANCH_DVM_OPCODES:
