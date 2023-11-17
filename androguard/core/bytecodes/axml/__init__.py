@@ -1016,7 +1016,13 @@ class AXMLPrinter:
             if _type == TEXT:
                 if len(cur) != 0:
                     log.debug("TEXT for {}".format(cur[-1]))
-                    cur[-1].text = self.axml.text
+                    # cur[-1].text = self.axml.text
+                    ### custom by zwl, 修复AndroidMainfest.xml对抗：插入大量乱码字符，c01103b850641d354e893bda3053f30366984c52
+                    ### All strings must be XML compatible: Unicode or ASCII, no NULL bytes or control characters
+                    try:
+                        cur[-1].text = self.axml.text
+                    except: # 过滤乱码字符
+                        cur[-1].text = re.sub(u'[^\\u0020-\\uD7FF\\u0009\\u000A\\u000D\\uE000-\\uFFFD\\U00010000-\\U0010FFFF]+', '', self.axml.text)
             if _type == END_DOCUMENT:
                 # Check if all namespace mappings are closed
                 if len(self.axml.namespaces) > 0:
