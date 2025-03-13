@@ -584,25 +584,81 @@ class APK:
             # If the icon can not be found, return now
             return None
 
+        # if app_icon.startswith("@"):
+        #     app_icon_id = app_icon[1:]
+        #     app_icon_id = app_icon_id.split(':')[-1]
+        #     res_id = int(app_icon_id, 16)
+        #     candidates = res_parser.get_resolved_res_configs(res_id)
+
+        #     app_icon = None
+        #     current_dpi = -1
+
+        #     try:
+        #         for config, file_name in candidates:
+        #             dpi = config.get_density()
+        #             if current_dpi < dpi <= max_dpi:
+        #                 app_icon = file_name
+        #                 current_dpi = dpi
+        #     except Exception as e:
+        #         log.warning("Exception selecting app icon: %s" % e)
+
+        ### custom by zgy: parse icon ###
         if app_icon.startswith("@"):
-            app_icon_id = app_icon[1:]
-            app_icon_id = app_icon_id.split(':')[-1]
-            res_id = int(app_icon_id, 16)
-            candidates = res_parser.get_resolved_res_configs(res_id)
+            app_icon = self._select_res_dpi(max_dpi, res_parser, app_icon)
 
-            app_icon = None
-            current_dpi = -1
-
-            try:
-                for config, file_name in candidates:
-                    dpi = config.get_density()
-                    if current_dpi < dpi <= max_dpi:
-                        app_icon = file_name
-                        current_dpi = dpi
-            except Exception as e:
-                log.warning("Exception selecting app icon: %s" % e)
+        if app_icon.endswith(".xml"):
+            # adaptive-icon
+            app_icon = self._process_adaptive_icon(max_dpi, res_parser, app_icon)
 
         return app_icon
+
+    ### custom by zgy: parse icon ###
+    def _process_adaptive_icon(self, max_dpi, res_parser, xml_file):
+        axml = AXMLPrinter(self.get_file(xml_file))
+        xml = axml.get_xml_obj()
+        if xml.tag != "adaptive-icon":
+            return xml_file
+        drawables = [e.attrib.get("{http://schemas.android.com/apk/res/android}drawable") 
+            for e in xml.getchildren()]
+        drawables = filter(None, drawables)
+        icons = []
+        for rid in drawables:
+            res_id = self._at_res_id_to_int(rid)
+            res_type = res_parser.get_id(self.get_package(), res_id)
+            if res_type == 'color':
+                pass
+            else:
+                icons.append(self._select_res_dpi(max_dpi, res_parser, rid))
+
+        for icon in icons:
+            if icon.endswith(".png"):
+                return icon
+        return xml_file
+
+    ### custom by zgy: parse icon ###
+    def _select_res_dpi(self, max_dpi, res_parser, at_res_id):
+        res_id = self._at_res_id_to_int(at_res_id)
+        candidates = res_parser.get_resolved_res_configs(res_id)
+
+        return_file = None
+        current_dpi = -1
+
+        try:
+            for config, file_name in candidates:
+                dpi = config.get_density()
+                if current_dpi < dpi <= max_dpi:
+                    return_file = file_name
+                    current_dpi = dpi
+        except Exception as e:
+            log.warning("Exception selecting app icon: %s" % e)
+        return return_file
+
+    ### custom by zgy: parse icon ###
+    def _at_res_id_to_int(self, at_res_id):
+        at_res_id = at_res_id[1:]
+        at_res_id = at_res_id.split(":")[-1]
+        res_id = int(at_res_id, 16)
+        return res_id
 
     def get_package(self):
         """
