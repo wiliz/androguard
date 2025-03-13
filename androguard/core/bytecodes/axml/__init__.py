@@ -2657,7 +2657,12 @@ class ARSCResTableEntry:
         self.index = unpack('<I', buff.read(4))[0]
 
         if self.is_complex():
-            self.item = ARSCComplex(buff, parent)
+            # self.item = ARSCComplex(buff, parent)
+            ############## custom by yzk: fix ####################
+            # complex 数据主要用于app界面ui的样式，逆向基本用不到，这里也经常解析错误，直接跳过了
+            # self.item = ARSCComplex(buff, parent)
+            pass
+            #######################################
         else:
             # If FLAG_COMPLEX is not set, a Res_value structure will follow
             self.key = ARSCResStringPoolRef(buff, self.parent)
@@ -2669,7 +2674,16 @@ class ARSCResTableEntry:
         return self.index
 
     def get_value(self):
-        return self.parent.mKeyStrings.getString(self.index)
+        # return self.parent.mKeyStrings.getString(self.index)
+        ### custom by yzk: fix ###
+        ### 由于安卓的字符串解析是用到再解析，字符串总数字段没用到，而此库会根据字符串总数一次性解析全量字符串，
+        ### 所以直接try过滤掉解析错误的字符串。
+        res = ""
+        try:
+            res = self.parent.mKeyStrings.getString(self.index)
+        except Exception as e:
+            log.warning("get_value error")
+        return res
 
     def get_key_data(self):
         return self.key.get_data_value()

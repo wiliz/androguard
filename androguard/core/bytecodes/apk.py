@@ -1738,7 +1738,13 @@ class APK:
         # Store all blocks
         while f.tell() < end_offset - 24:
             size, key = unpack('<QI', f.read(12))
-            value = f.read(size - 4)
+            # value = f.read(size - 4)
+            ############ custom by yzk: fix ##############
+            try:    # 不一定所有的blocks都是可用的，可能会被插入错误的block对抗分析
+                value = f.read(size - 4)
+            except:
+                continue
+            ################################
             self._v2_blocks[key] = value
 
         # Test if a signature is found
