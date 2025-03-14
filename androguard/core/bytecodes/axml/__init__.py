@@ -808,7 +808,12 @@ class AXMLParser:
         Returns the numeric ID for the namespace URI of an attribute
         """
         offset = self._get_attribute_offset(index)
-        uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
+        # uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
+        ### custom by zwl ###
+        try:
+            uri = self.m_attributes[offset + ATTRIBUTE_IX_NAMESPACE_URI]
+        except:
+            uri = 0xFFFFFFFF
 
         return uri
 
